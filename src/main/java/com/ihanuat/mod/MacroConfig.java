@@ -50,6 +50,7 @@ public class MacroConfig {
     public static final boolean DEFAULT_MANUAL_PEST_ALERT_SOUND = false;
     public static final int DEFAULT_MANUAL_PEST_REWARP_AT = 0;
     public static final String DEFAULT_MANUAL_PEST_SOUND_PATH = "";
+    public static final boolean DEFAULT_DISCO_DESTINATION_MODE = false;
     public static final boolean DEFAULT_TRIGGER_PEST_ON_CHAT = true;
     public static final int DEFAULT_VISITOR_THRESHOLD = 5;
     public static final boolean DEFAULT_AUTO_WARDROBE_PEST = true;
@@ -186,6 +187,17 @@ public class MacroConfig {
     public static boolean manualPestAlertSound = DEFAULT_MANUAL_PEST_ALERT_SOUND;
     public static int manualPestRewarpAt = DEFAULT_MANUAL_PEST_REWARP_AT;
     public static String manualPestSoundPath = DEFAULT_MANUAL_PEST_SOUND_PATH;
+    public static boolean discoDestinationMode = DEFAULT_DISCO_DESTINATION_MODE;
+
+    /**
+     * True when the pest cleaner should bypass the Taunahi CLI script and
+     * use the in-mod return-detection flow (alive-count → rewarp threshold →
+     * delay → return). Both Manual Pest Clean and Disco Destination Mode
+     * share this flow; Disco additionally automates holding right-click.
+     */
+    public static boolean usesManualPestReturnFlow() {
+        return manualPestClean || discoDestinationMode;
+    }
     public static boolean triggerPestOnChat = DEFAULT_TRIGGER_PEST_ON_CHAT;
     public static final int DEFAULT_PEST_CHAT_TRIGGER_DELAY = 0;
     public static int pestChatTriggerDelay = DEFAULT_PEST_CHAT_TRIGGER_DELAY;
@@ -511,6 +523,7 @@ public class MacroConfig {
         d.manualPestAlertSound = manualPestAlertSound;
         d.manualPestRewarpAt = manualPestRewarpAt;
         d.manualPestSoundPath = manualPestSoundPath;
+        d.discoDestinationMode = discoDestinationMode;
         d.triggerPestOnChat = triggerPestOnChat;
         d.pestChatTriggerDelay = pestChatTriggerDelay;
         d.visitorThreshold = visitorThreshold;
@@ -654,6 +667,7 @@ public class MacroConfig {
             manualPestAlertSound = d.manualPestAlertSound;
             manualPestRewarpAt = Math.max(0, Math.min(8, d.manualPestRewarpAt));
             manualPestSoundPath = d.manualPestSoundPath != null ? d.manualPestSoundPath : DEFAULT_MANUAL_PEST_SOUND_PATH;
+            discoDestinationMode = d.discoDestinationMode;
             triggerPestOnChat = d.triggerPestOnChat;
             pestChatTriggerDelay = d.pestChatTriggerDelay;
             visitorThreshold = d.visitorThreshold;
@@ -855,6 +869,7 @@ public class MacroConfig {
         boolean manualPestAlertSound = DEFAULT_MANUAL_PEST_ALERT_SOUND;
         int manualPestRewarpAt = DEFAULT_MANUAL_PEST_REWARP_AT;
         String manualPestSoundPath = DEFAULT_MANUAL_PEST_SOUND_PATH;
+        boolean discoDestinationMode = DEFAULT_DISCO_DESTINATION_MODE;
         boolean triggerPestOnChat = DEFAULT_TRIGGER_PEST_ON_CHAT;
         int pestChatTriggerDelay = 0;
         int visitorThreshold = DEFAULT_VISITOR_THRESHOLD;

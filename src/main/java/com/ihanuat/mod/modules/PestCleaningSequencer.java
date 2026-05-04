@@ -205,6 +205,14 @@ public class PestCleaningSequencer {
                     triggerRodOnPestSpawn(client);
                 }
 
+                if (MacroConfig.discoDestinationMode) {
+                    ClientUtils.sendDebugMessage(client,
+                            "Disco Destination Mode enabled; bypassing Taunahi pest cleaner and starting in-mod hold loop.");
+                    // Disco manager handles its own vacuum swap and the right-click hold.
+                    DiscoDestinationManager.start(client, currentInfestedPlot, sessionId);
+                    return;
+                }
+
                 if (MacroConfig.manualPestClean && shouldDoAotv) {
                     equipVacuumForManualClean(client);
                 }
