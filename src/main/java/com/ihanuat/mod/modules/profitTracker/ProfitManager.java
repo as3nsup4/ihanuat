@@ -130,6 +130,7 @@ public class ProfitManager {
         compact.put("Pest Items", 0L);
         compact.put("Pets", 0L);
         compact.put("Misc Drops", 0L);
+        compact.put("Feast", 0L);
         compact.put("Visitor", 0L);
         compact.put("Costs", 0L);
         compact.put("Others", 0L);
@@ -153,6 +154,8 @@ public class ProfitManager {
                 compact.put("Pest Items", compact.get("Pest Items") + profit);
             } else if (ItemConstants.PETS_SET.contains(name)) {
                 compact.put("Pets", compact.get("Pets") + profit);
+            } else if (ItemConstants.FEAST_ITEMS_SET.contains(name)) {
+                compact.put("Feast", compact.get("Feast") + profit);
             } else if (ItemConstants.MISC_DROPS_SET.contains(name) || name.toLowerCase().startsWith("pet xp (")) {
                 if (isCleaning) {
                     compact.put("Pest Items", compact.get("Pest Items") + profit);
@@ -421,6 +424,9 @@ public class ProfitManager {
         } else if (ItemConstants.PETS_SET.contains(name)) {
             color = "\u00a76";
             tag = "PET";
+        } else if (ItemConstants.FEAST_ITEMS_SET.contains(name)) {
+            color = "\u00a7e";
+            tag = "FEAST";
         } else if (ItemConstants.MISC_DROPS_SET.contains(name) || name.toLowerCase().startsWith("pet xp (")) {
             color = "\u00a7b";
             tag = "MISC";
@@ -443,6 +449,8 @@ public class ProfitManager {
                 return "\u00a76\u00a7l[PET]";
             case "Misc Drops":
                 return "\u00a7b\u00a7l[MISC]";
+            case "Feast":
+                return "\u00a7e\u00a7l[FEAST]";
             case "Visitor":
                 return "\u00a75\u00a7l[VISITOR]";
             case "Costs":

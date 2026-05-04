@@ -37,7 +37,7 @@ public final class ItemConstants {
             "Fire in a Bottle", "Vermin Vaporizer Chip", "Mantid Claw",
             "Overclocker 3000", "Vinyl",
             "Dung", "Honey Jar", "Plant Matter", "Tasty Cheese", "Compost", "Jelly",
-            "Pest Shard");
+            "Pest Shard", "Locust Larva");
 
     public static final Set<String> PETS_SET = Set.of("Epic Slug", "Legendary Slug", "Rat");
 
@@ -52,6 +52,31 @@ public final class ItemConstants {
             "Thunderling", "Turtlellini", "Zombud", "All-in Aloe", "Devourer",
             "Glasscorn", "Godseed", "Jerryflower", "Phantomleaf", "Timestalk",
             "Tool EXP Capsule", "Pet XP", "Purse");
+
+    /**
+     * Harvest Feast event drops (SkyBlock 0.24.4 — Nov 2026). These are the
+     * 1/18,000 "RARE CROP!" crafting materials that drop while harvesting
+     * in-season crops during the Harvest Feast event — one base material
+     * per featured crop. Crafted derivatives (e.g. Cornucopia Crystal,
+     * Turbo Gourd) are recipes, not drops, and so are not tracked here.
+     */
+    public static final Set<String> FEAST_ITEMS_SET = Set.of(
+            "Cornucopia",            // Wheat
+            "Carrot Zest",           // Carrot
+            "Deepfries",             // Potato
+            "Aggourdian",            // Pumpkin
+            "Cane Knot",             // Sugar Cane
+            "Melon Juice",           // Melon
+            "Cactus Flower",         // Cactus
+            "Designer Coffee Beans", // Cocoa Beans
+            "Feastfungus",           // Mushroom
+            "Botroot",               // Nether Wart
+            "Salted Sunflower Seeds",// Sunflower
+            "Crystalized Moonlight", // Moonflower
+            "Floral Gelatin",        // Wild Rose
+            "Seasoning");            // Universal feast drop (no bazaar value)
+
+
 
     public static final Set<String> BASE_CROPS = Set.of(
             "Wheat", "Potato", "Carrot", "Melon Slice", "Pumpkin",
@@ -152,6 +177,14 @@ public final class ItemConstants {
             Map.entry("Delicate V Book", 0.0),
             Map.entry("Replenish I Book", 0.0), Map.entry("Dedication IV Book", 0.0), Map.entry("Jungle Key", 0.0),
             Map.entry("Pet Cake", 0.0), Map.entry("Fine Flour", 0.0), Map.entry("Arachne Fragment", 0.0),
+            Map.entry("Locust Larva", 0.0),
+            // Feast (Harvest Feast base drops; prices populated live from bazaar)
+            Map.entry("Cornucopia", 0.0), Map.entry("Carrot Zest", 0.0), Map.entry("Deepfries", 0.0),
+            Map.entry("Aggourdian", 0.0), Map.entry("Cane Knot", 0.0), Map.entry("Melon Juice", 0.0),
+            Map.entry("Cactus Flower", 0.0), Map.entry("Designer Coffee Beans", 0.0),
+            Map.entry("Feastfungus", 0.0), Map.entry("Botroot", 0.0),
+            Map.entry("Salted Sunflower Seeds", 0.0), Map.entry("Crystalized Moonlight", 0.0),
+            Map.entry("Floral Gelatin", 0.0), Map.entry("Seasoning", 0.0),
             Map.entry("Purse", 1.0));
 
     public static final Map<String, String> BAZAAR_MAPPING = Map.ofEntries(
@@ -288,5 +321,26 @@ public final class ItemConstants {
             Map.entry("Sparkling Rune I", "RUNE_SPARKLING"),
             Map.entry("Wake Rune I", "RUNE_WAKE"),
             Map.entry("White Spiral Rune I", "RUNE_WHITE_SPIRAL"),
-            Map.entry("Zap Rune I", "RUNE_ZAP"));
+            Map.entry("Zap Rune I", "RUNE_ZAP"),
+
+            // Feast Items (Harvest Feast base drops; bazaar IDs follow Hypixel's
+            // standard UPPER_SNAKE_CASE convention. Items not yet listed on
+            // bazaar will simply price at 0 — same as the existing Misc Drops
+            // without bazaar listings.)
+            Map.entry("Cornucopia", "CORNUCOPIA"),
+            Map.entry("Carrot Zest", "CARROT_ZEST"),
+            Map.entry("Deepfries", "DEEPFRIES"),
+            Map.entry("Aggourdian", "AGGOURDIAN"),
+            Map.entry("Cane Knot", "CANE_KNOT"),
+            Map.entry("Melon Juice", "MELON_JUICE"),
+            Map.entry("Cactus Flower", "CACTUS_FLOWER"),
+            Map.entry("Designer Coffee Beans", "DESIGNER_COFFEE_BEANS"),
+            Map.entry("Feastfungus", "FEASTFUNGUS"),
+            Map.entry("Botroot", "BOTROOT"),
+            Map.entry("Salted Sunflower Seeds", "SALTED_SUNFLOWER_SEEDS"),
+            Map.entry("Crystalized Moonlight", "CRYSTALIZED_MOONLIGHT"),
+            Map.entry("Floral Gelatin", "FLORAL_GELATIN"),
+
+            // Pest drops added in 0.24.4
+            Map.entry("Locust Larva", "LOCUST_LARVA"));
 }
