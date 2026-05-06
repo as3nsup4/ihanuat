@@ -43,11 +43,11 @@ public class PestManager {
     }
 
     private static long getNoPestReturnDelayMs() {
-        return MacroConfig.manualPestClean ? MacroConfig.manualPestReturnDelay : DEFAULT_NO_PEST_RETURN_DELAY_MS;
+        return MacroConfig.usesManualPestReturnFlow() ? MacroConfig.manualPestReturnDelay : DEFAULT_NO_PEST_RETURN_DELAY_MS;
     }
 
     private static int getReturnReadyPestCount() {
-        return MacroConfig.manualPestClean ? MacroConfig.manualPestRewarpAt : 0;
+        return MacroConfig.usesManualPestReturnFlow() ? MacroConfig.manualPestRewarpAt : 0;
     }
 
     public static void reset() {
@@ -68,6 +68,7 @@ public class PestManager {
         PestReturnManager.resetState();
         PestAotvManager.resetState();
         PestBonusManager.resetState();
+        DiscoDestinationManager.resetState();
     }
 
     public static void checkTabListForPests(Minecraft client, MacroState.State currentState) {
@@ -82,7 +83,7 @@ public class PestManager {
         syncPredictedAliveFromTab(data.aliveCount);
         int effectiveAlive = getEffectiveAliveCount(data.aliveCount);
         String manualAliveSource = "effective";
-        if (currentState == MacroState.State.CLEANING && MacroConfig.manualPestClean) {
+        if (currentState == MacroState.State.CLEANING && MacroConfig.usesManualPestReturnFlow()) {
             int sidebarAliveCount = ClientUtils.getGardenPestCountFromSidebar(client);
             if (sidebarAliveCount >= 0) {
                 predictedAliveCount = sidebarAliveCount;
@@ -113,17 +114,17 @@ public class PestManager {
         }
 
         if (currentState == MacroState.State.CLEANING) {
-            if (MacroConfig.manualPestClean && effectiveAlive > getReturnReadyPestCount()) {
+            if (MacroConfig.usesManualPestReturnFlow() && effectiveAlive > getReturnReadyPestCount()) {
                 manualReturnArmed = true;
             }
-            if (MacroConfig.manualPestClean) {
+            if (MacroConfig.usesManualPestReturnFlow()) {
                 logManualReturnState(client, effectiveAlive, manualAliveSource);
             }
 
-            if (effectiveAlive <= getReturnReadyPestCount() && (!MacroConfig.manualPestClean || manualReturnArmed)) {
+            if (effectiveAlive <= getReturnReadyPestCount() && (!MacroConfig.usesManualPestReturnFlow() || manualReturnArmed)) {
                 if (lastZeroPestTime == 0) {
                     lastZeroPestTime = System.currentTimeMillis();
-                    if (MacroConfig.manualPestClean && MacroConfig.showDebug) {
+                    if (MacroConfig.usesManualPestReturnFlow() && MacroConfig.showDebug) {
                         ClientUtils.sendDebugMessage(client,
                                 "Manual pest countdown started: alive=" + effectiveAlive
                                         + ", source=" + manualAliveSource
@@ -135,7 +136,7 @@ public class PestManager {
                         client.player.displayClientMessage(
                                 Component.literal("§cFail-safe: No pests detected for 10s. Returning to farm."), true);
                     }
-                    if (MacroConfig.manualPestClean && MacroConfig.showDebug) {
+                    if (MacroConfig.usesManualPestReturnFlow() && MacroConfig.showDebug) {
                         ClientUtils.sendDebugMessage(client,
                                 "Manual pest return triggered: alive=" + effectiveAlive
                                         + ", source=" + manualAliveSource
@@ -146,7 +147,7 @@ public class PestManager {
                     return;
                 }
             } else {
-                if (MacroConfig.manualPestClean && lastZeroPestTime != 0 && MacroConfig.showDebug) {
+                if (MacroConfig.usesManualPestReturnFlow() && lastZeroPestTime != 0 && MacroConfig.showDebug) {
                     ClientUtils.sendDebugMessage(client,
                             "Manual pest countdown reset: alive=" + effectiveAlive
                                     + ", source=" + manualAliveSource

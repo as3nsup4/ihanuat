@@ -578,6 +578,10 @@ public class ClickGui extends Screen {
             MacroConfig.pestThreshold = v;
             save();
         }, ""));
+        p.add(toggle(tr("Disco Destination", "迪斯科模式"), () -> MacroConfig.discoDestinationMode, v -> {
+            MacroConfig.discoDestinationMode = v;
+            save();
+        }));
         p.add(toggle(tr("Trigger on Chat", "聊天触发"), () -> MacroConfig.triggerPestOnChat, v -> {
             MacroConfig.triggerPestOnChat = v;
             save();

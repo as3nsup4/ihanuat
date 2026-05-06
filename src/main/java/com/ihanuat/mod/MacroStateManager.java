@@ -120,6 +120,7 @@ public class MacroStateManager {
         if (client != null) {
             client.execute(() -> { if (client.screen != null) client.setScreen(null); });
         }
+        com.ihanuat.mod.modules.DiscoDestinationManager.forceRelease(client);
         ClientUtils.forceReleaseKeys(client);
         ClientUtils.sendDebugMessage(client, "Stopping script: Macro stopped by user");
         com.ihanuat.mod.util.CommandUtils.stopScript(client, 0);
