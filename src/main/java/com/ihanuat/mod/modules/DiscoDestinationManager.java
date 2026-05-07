@@ -24,7 +24,7 @@ import net.minecraft.network.chat.Component;
  *       at the natural cooldown rate.</li>
  *   <li>The hold loop polls the existing pest-count sources (sidebar/tab list)
  *       via {@link PestManager}'s shared logic and exits as soon as the count
- *       drops to or below {@link MacroConfig#manualPestRewarpAt}, or when the
+ *       drops to or below {@link MacroConfig#discoRewarpAt}, or when the
  *       hard timeout expires.</li>
  *   <li>Return-to-farm is delegated to the existing
  *       {@link PestManager#checkTabListForPests} → {@link PestReturnManager}
@@ -157,10 +157,11 @@ public class DiscoDestinationManager {
 
                 if (elapsed >= INITIAL_GRACE_MS) {
                     int aliveCount = readAliveCount(client);
-                    if (aliveCount >= 0 && aliveCount <= MacroConfig.manualPestRewarpAt) {
+                    int rewarpAt = MacroConfig.discoRewarpAt;
+                    if (aliveCount >= 0 && aliveCount <= rewarpAt) {
                         ClientUtils.sendDebugMessage(client,
                                 "Disco Destination: pest count " + aliveCount
-                                        + " <= rewarpAt " + MacroConfig.manualPestRewarpAt
+                                        + " <= rewarpAt " + rewarpAt
                                         + " — releasing hold; standard return flow will take over.");
                         return;
                     }

@@ -373,22 +373,27 @@ public class ClickGui extends Screen {
 
     private void buildPanels() {
         int startX = 4, startY = 4;
-        int[] idx = {0};
-        Supplier<int[]> nextPos = () -> {
-            int i = idx[0]++;
-            return new int[]{startX, startY + i * (HEADER_H + 1)};
-        };
+        // Index-aware fallback: row Y derived from the panel's own index, NOT a
+        // counter that only ticks when fallback fires. With the old counter, a
+        // panel's fallback row depended on how many earlier panels lacked saved
+        // positions, which changed as users dragged some panels but not others.
+        java.util.function.IntFunction<int[]> stackPos = i -> new int[]{startX, startY + i * (HEADER_H + 1)};
+        // Custom default position for the Disco Mode panel: place it next to
+        // Manual Pest (right-hand column, same row) instead of stacking it
+        // below all other panels where it would be hidden behind the column.
+        Supplier<int[]> discoDefaultPos = () -> new int[]{startX + PANEL_W + 8, startY + 4 * (HEADER_H + 1)};
         int[][] saved = MacroConfig.clickGuiPanelPositions;
-        panels.add(generalPanel(pos(saved, 0, nextPos)));
-        panels.add(delaysPanel(pos(saved, 1, nextPos)));
-        panels.add(wardrobePanel(pos(saved, 2, nextPos)));
-        panels.add(autoPestPanel(pos(saved, 3, nextPos)));
-        panels.add(manualPestPanel(pos(saved, 4, nextPos)));
-        panels.add(profitPanel(pos(saved, 5, nextPos)));
-        panels.add(dynamicRestPanel(pos(saved, 6, nextPos)));
-        panels.add(qolPanel(pos(saved, 7, nextPos)));
-        panels.add(themePanel(pos(saved, 8, nextPos)));
-        panels.add(chatRulesPanel(pos(saved, 9, nextPos)));
+        panels.add(generalPanel(pos(saved, 0, () -> stackPos.apply(0))));
+        panels.add(delaysPanel(pos(saved, 1, () -> stackPos.apply(1))));
+        panels.add(wardrobePanel(pos(saved, 2, () -> stackPos.apply(2))));
+        panels.add(autoPestPanel(pos(saved, 3, () -> stackPos.apply(3))));
+        panels.add(manualPestPanel(pos(saved, 4, () -> stackPos.apply(4))));
+        panels.add(profitPanel(pos(saved, 5, () -> stackPos.apply(5))));
+        panels.add(dynamicRestPanel(pos(saved, 6, () -> stackPos.apply(6))));
+        panels.add(qolPanel(pos(saved, 7, () -> stackPos.apply(7))));
+        panels.add(themePanel(pos(saved, 8, () -> stackPos.apply(8))));
+        panels.add(chatRulesPanel(pos(saved, 9, () -> stackPos.apply(9))));
+        panels.add(discoModePanel(pos(saved, 10, discoDefaultPos)));
     }
 
     private static int[] pos(int[][] saved, int i, Supplier<int[]> fallback) {
@@ -472,6 +477,10 @@ public class ClickGui extends Screen {
         }, "ms"));
         p.add(slider(tr("Equip Swap", "装备切换"), "equipmentSwapDelay", 100, 300, () -> MacroConfig.equipmentSwapDelay, v -> {
             MacroConfig.equipmentSwapDelay = v;
+            save();
+        }, "ms"));
+        p.add(slider(tr("Setspawn Cooldown", "重生点冷却"), "setspawnCooldown", 250, 3000, () -> MacroConfig.setspawnCooldown, v -> {
+            MacroConfig.setspawnCooldown = v;
             save();
         }, "ms"));
         p.add(slider(tr("Rod Swap", "鱼竿切换"), "rodSwapDelay", 50, 1000, () -> MacroConfig.rodSwapDelay, v -> {
@@ -578,10 +587,6 @@ public class ClickGui extends Screen {
             MacroConfig.pestThreshold = v;
             save();
         }, ""));
-        p.add(toggle(tr("Disco Destination", "迪斯科模式"), () -> MacroConfig.discoDestinationMode, v -> {
-            MacroConfig.discoDestinationMode = v;
-            save();
-        }));
         p.add(toggle(tr("Trigger on Chat", "聊天触发"), () -> MacroConfig.triggerPestOnChat, v -> {
             MacroConfig.triggerPestOnChat = v;
             save();
@@ -657,6 +662,27 @@ public class ClickGui extends Screen {
         }, ""));
         p.add(slider(tr("Rewarp At", "回传于"), "manualPestRewarpAt", 0, 8, () -> MacroConfig.manualPestRewarpAt, v -> {
             MacroConfig.manualPestRewarpAt = v;
+            save();
+        }, ""));
+        return p;
+    }
+
+    private Panel discoModePanel(int[] pos) {
+        Panel p = makePanel(tr("Disco Mode", "迪斯科模式"), pos);
+        p.add(toggle(tr("Disco Destination", "迪斯科目的地"), () -> MacroConfig.discoDestinationMode, v -> {
+            MacroConfig.discoDestinationMode = v;
+            save();
+        }));
+        p.add(toggle(tr("Tp Before Wardrobe", "传送先于换装"), () -> MacroConfig.discoTpBeforeWardrobe, v -> {
+            MacroConfig.discoTpBeforeWardrobe = v;
+            save();
+        }));
+        p.add(slider(tr("Disco Return", "迪斯科返回"), "discoReturnDelay", 0, 10000, () -> MacroConfig.discoReturnDelay, v -> {
+            MacroConfig.discoReturnDelay = v;
+            save();
+        }, ""));
+        p.add(slider(tr("Rewarp At", "回传于"), "discoRewarpAt", 0, 8, () -> MacroConfig.discoRewarpAt, v -> {
+            MacroConfig.discoRewarpAt = v;
             save();
         }, ""));
         return p;
@@ -1100,6 +1126,7 @@ public class ClickGui extends Screen {
             case "Equipment & George", "装备与 George" -> "equipmentgeorge";
             case "Auto Pest", "自动虫害" -> "autopest";
             case "Manual Pest", "手动虫害" -> "manualpest";
+            case "Disco Mode", "迪斯科模式" -> "discomode";
             case "Auto Visitor", "自动访客" -> "autovisitor";
             case "Auto Sell", "自动出售" -> "autosell";
             case "Profit Calculator", "利润计算器" -> "profitcalculator";
@@ -1138,6 +1165,7 @@ public class ClickGui extends Screen {
                     "Rotation — How long the macro spends rotating to look at the crop before it starts farming. Higher values look more human but slow cycle time.",
                     "GUI Click — Throttle between each simulated click inside menus (wardrobe, anvil, George, junk drop UI). Shared across all GUI interactions.",
                     "Equip Swap — Pause after swapping your Equipment loadout slot. Gives the server time to apply the new loadout before the next action.",
+                    "Setspawn Cooldown — Pause after /setspawn finishes before the macro opens the wardrobe during pest cleaning. Default 1000ms; lower if you trust your network, raise if wardrobe interactions occasionally fail.",
                     "Rod Swap — Pause after switching to the fishing rod. Only applies when Auto Rod is enabled (pest CD / pest spawn / return to farm triggers).",
                     "Pest Chat — How long to wait after a pest chat message before the macro reacts and begins the pest clean sequence. Useful for letting the chat settle.",
                     "Book Combine — Throttle between each simulated click at the anvil during book combining. Keep this above ~150ms to avoid missed clicks.",
@@ -1207,6 +1235,13 @@ public class ClickGui extends Screen {
                     "Manual Return — How long the macro should wait after the pest count reaches your target before returning to garden in Manual Clean mode.",
                     "Rewarp At — Return to garden when the live pest count is at or below this number. Set it to 0 for full clears, or 1+ if you intentionally want to leave pests behind.",
             };
+            case "discomode" -> new String[]{
+                    "Note: Must use a /plottp pest cage with Disco Destination.",
+                    "Disco Destination — Bypass Taunahi's pest cleaner and have the mod hold right-click on the Pest Vacuum until pests are cleared.",
+                    "Tp Before Wardrobe — Teleport to the infested plot before the wardrobe swap, so the post-tp delay overlaps with pests spawning. Forces /tptoplot (skips AOTV).",
+                    "Disco Return — How long the macro should wait after the pest count reaches your target before returning to garden in Disco Mode.",
+                    "Rewarp At — Return to garden when the live pest count is at or below this number. Set it to 0 for full clears, or 1+ if you intentionally want to leave pests behind.",
+            };
             case "autovisitor" -> new String[]{
                     "Auto-Visitor — Automatically handle visitors that appear on your farm.",
                     "Threshold — Minimum number of visitors required before Auto Visitor activates.",
@@ -1265,6 +1300,7 @@ public class ClickGui extends Screen {
                     "旋转 - 宏在开始耕作前转向作物所花费的时间。值越高越像真人，但会拖慢循环速度。",
                     "GUI 点击 - 菜单内每次模拟点击之间的间隔（衣柜、铁砧、George、垃圾丢弃界面）。适用于所有 GUI 交互。",
                     "装备切换 - 更换装备预设槽后暂停一段时间，让服务器有时间应用新装备后再执行下一步。",
+                    "重生点冷却 - 在虫害清理期间，/setspawn 完成后等待多久再打开衣柜。默认 1000ms；网络稳定可降低，若衣柜交互偶发失败可提高。",
                     "鱼竿切换 - 切换到鱼竿后暂停一段时间。仅在启用自动鱼竿时生效（虫害 CD / 生成 / 返回农场触发）。",
                     "虫害聊天 - 在收到虫害聊天消息后等待多久，宏才会开始虫害清理流程。可用于等待聊天内容稳定。",
                     "书本合成 - 在铁砧合成书本时每次模拟点击之间的间隔。建议保持在约 150ms 以上以避免漏点。",
@@ -1331,6 +1367,13 @@ public class ClickGui extends Screen {
                     "手动提示音 - 当手动清理进行到需要你接手时播放本地提示音。",
                     "自定义声音 - 手动提示音可选的本地音频文件。将文件放到 config/ihanuat/sounds/ 中，并填写完整文件名和扩展名，例如 ding.wav。推荐使用 .wav。也可以粘贴完整绝对路径。若为空或无效，则回退到系统蜂鸣声。",
                     "手动返回 - 在手动清理模式下，虫害数量达到目标后宏在返回花园前应等待多久。",
+                    "回传于 - 当实时虫害数量小于或等于该值时返回花园。设为 0 表示完全清理；若你想故意留下一些虫害，可设为 1 或更高。",
+            };
+            case "discomode" -> new String[]{
+                    "注意：迪斯科目的地必须配合 /plottp 虫害笼使用。",
+                    "迪斯科目的地 - 绕过 Taunahi 的虫害清理，由模组按住右键操作虫害吸尘器直到虫害清理完毕。",
+                    "传送先于换装 - 在换装前先传送到有虫害的地块，让传送后的延迟与虫害刷新重叠。会强制使用 /tptoplot（跳过 AOTV）。",
+                    "迪斯科返回 - 在迪斯科模式下，虫害数量达到目标后宏在返回花园前应等待多久。",
                     "回传于 - 当实时虫害数量小于或等于该值时返回花园。设为 0 表示完全清理；若你想故意留下一些虫害，可设为 1 或更高。",
             };
             case "autovisitor" -> new String[]{
@@ -1831,7 +1874,11 @@ public class ClickGui extends Screen {
     }
 
     private void savePanelPositions() {
-        String[] order = {"General", "Delays", "Wardrobe Swap", "Auto Pest", "Manual Pest", "Profit Calculator", "Dynamic Rest", "QOL", "Theme", "Chat Rules"};
+        // CRITICAL: this array's order MUST match the panels.add(...) order in buildPanels().
+        // The index of each title here = the index used to read/write clickGuiPanelPositions[].
+        // If the two orders drift apart, panels get assigned the wrong saved positions and
+        // shuffle a row each time the GUI opens (the "dancing tabs" bug).
+        String[] order = {"General", "Delays", "Wardrobe Swap", "Auto Pest", "Manual Pest", "Profit Calculator", "Dynamic Rest", "QOL", "Theme", "Chat Rules", "Disco Mode"};
         int[][] positions = new int[order.length][3];
         for (int i = 0; i < order.length; i++)
             for (Panel p : panels)
