@@ -17,7 +17,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 
 public class PestCleaningSequencer {
-    private static final long SETSPAWN_TO_WARDROBE_COOLDOWN_MS = 1000L;
     private static final long CLEANING_START_BUSY_WAIT_MS = 10000L;
     private static final Object DEFERRED_START_LOCK = new Object();
 
@@ -138,8 +137,8 @@ public class PestCleaningSequencer {
                     return;
                 if (MacroConfig.autoWardrobePest) {
                     ClientUtils.sendDebugMessage(client,
-                            "Cooling down 1s after /setspawn before any wardrobe interaction.");
-                    MacroWorkerThread.sleep(SETSPAWN_TO_WARDROBE_COOLDOWN_MS);
+                            "Cooling down " + MacroConfig.setspawnCooldown + "ms after /setspawn before any wardrobe interaction.");
+                    MacroWorkerThread.sleep(MacroConfig.setspawnCooldown);
                 }
                 if (MacroWorkerThread.shouldAbortTask(client))
                     return;
@@ -147,6 +146,56 @@ public class PestCleaningSequencer {
                 boolean isSamePlot = currentInfestedPlot != null && currentInfestedPlot.equals(currentPlot);
                 boolean shouldDoAotv = PestAotvManager.shouldDoAotvOnCurrentPlot(client, currentInfestedPlot,
                         isSamePlot);
+
+                // Phillip MUST be called before any teleport so the bonus is active by
+                // the time we land on the infested plot. With "Tp Before Wardrobe" off,
+                // the original block further down still handles this. With it on, we
+                // hoist the /call here so it precedes the tp.
+                boolean tpFirst = MacroConfig.discoDestinationMode && MacroConfig.discoTpBeforeWardrobe;
+                boolean phillipHandledEarly = false;
+                if (tpFirst && PestBonusManager.isBonusInactive) {
+                    client.player.displayClientMessage(
+                            Component.literal("§dBonus is INACTIVE! Triggering Phillip reactivation..."), true);
+                    if (MacroConfig.callPhillipForBonus) {
+                        PestBonusManager.runBonusReactivationSequence(client);
+                    } else {
+                        ClientUtils.sendDebugMessage(client, "Call Phillip for Bonus is disabled — skipping reactivation.");
+                    }
+                    if (MacroWorkerThread.shouldAbortTask(client))
+                        return;
+                    if (PestBonusManager.isBonusInactive) {
+                        ClientUtils.sendDebugMessage(client,
+                                "Bonus still INACTIVE after Phillip wait — continuing sequence anyway.");
+                    }
+                    phillipHandledEarly = true;
+                }
+
+                // Spray MUST happen on the farming plot (where you spawned/farmed),
+                // not the infested plot. With "Tp Before Wardrobe" off, the original
+                // block further down handles this correctly because tp comes after
+                // spraying. With it on, we hoist the spray here so it runs before tp.
+                boolean sprayHandledEarly = false;
+                if (tpFirst && MacroConfig.spraySinglePlot && SprayonatorManager.needsSpraying) {
+                    ClientUtils.sendDebugMessage(client, "Spray Single Plot: spraying farming plot before tp-first warp.");
+                    SprayonatorManager.executeSpraySequence(client);
+                    if (MacroWorkerThread.shouldAbortTask(client))
+                        return;
+                    sprayHandledEarly = true;
+                }
+
+                // Disco Mode "Tp Before Wardrobe": tp to the infested plot BEFORE the
+                // wardrobe swap, so the small post-tp delay overlaps with pest spawning
+                // instead of with gear-restore. Forces /tptoplot (skips AOTV) because
+                // AOTV puts the player on the plot roof — we want ground-level on the
+                // infested plot to start vacuuming immediately after the swap finishes.
+                if (tpFirst) {
+                    ClientUtils.sendDebugMessage(client,
+                            "Disco Tp-First: warping to infested plot before wardrobe swap.");
+                    warpToInfestedPlotIfNeeded(client, currentInfestedPlot, false);
+                    if (MacroWorkerThread.shouldAbortTask(client))
+                        return;
+                    shouldDoAotv = false; // already moved; downstream code must skip AOTV path
+                }
 
                 // restoreGearForCleaning restores farming wardrobe/equipment BEFORE movement.
                 if (!restoreGearForCleaning(client, shouldDoAotv))
@@ -161,7 +210,7 @@ public class PestCleaningSequencer {
                 ClientUtils.sendDebugMessage(client, "Bonus inactive flag: " + PestBonusManager.isBonusInactive);
                 boolean rodHandledForSpawn = false;
 
-                if (PestBonusManager.isBonusInactive) {
+                if (PestBonusManager.isBonusInactive && !phillipHandledEarly) {
                     client.player.displayClientMessage(
                             Component.literal("§dBonus is INACTIVE! Triggering Phillip reactivation..."), true);
                     if (MacroConfig.callPhillipForBonus) {
@@ -186,14 +235,18 @@ public class PestCleaningSequencer {
                 }
 
 
-                if (MacroConfig.spraySinglePlot && SprayonatorManager.needsSpraying) {
+                if (MacroConfig.spraySinglePlot && SprayonatorManager.needsSpraying && !sprayHandledEarly) {
                     ClientUtils.sendDebugMessage(client, "Spray Single Plot: spraying plot before cleaning.");
                     SprayonatorManager.executeSpraySequence(client);
                 if (MacroWorkerThread.shouldAbortTask(client))
                     return;
                 }
 
-                if (shouldDoAotv) {
+                if (tpFirst) {
+                    // already moved before the wardrobe swap; nothing to do here.
+                    ClientUtils.sendDebugMessage(client,
+                            "Disco Tp-First: already on infested plot, skipping post-swap movement.");
+                } else if (shouldDoAotv) {
                     // AOTV to roof handles movement — skip /tptoplot
                     PestAotvManager.performAotvToRoof(client);
                 } else {

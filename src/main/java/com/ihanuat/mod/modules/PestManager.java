@@ -43,11 +43,11 @@ public class PestManager {
     }
 
     private static long getNoPestReturnDelayMs() {
-        return MacroConfig.usesManualPestReturnFlow() ? MacroConfig.manualPestReturnDelay : DEFAULT_NO_PEST_RETURN_DELAY_MS;
+        return MacroConfig.usesManualPestReturnFlow() ? MacroConfig.getActiveReturnDelayMs() : DEFAULT_NO_PEST_RETURN_DELAY_MS;
     }
 
     private static int getReturnReadyPestCount() {
-        return MacroConfig.usesManualPestReturnFlow() ? MacroConfig.manualPestRewarpAt : 0;
+        return MacroConfig.usesManualPestReturnFlow() ? MacroConfig.getActiveRewarpAt() : 0;
     }
 
     public static void reset() {

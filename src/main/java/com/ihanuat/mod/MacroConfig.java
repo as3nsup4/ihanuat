@@ -51,6 +51,9 @@ public class MacroConfig {
     public static final int DEFAULT_MANUAL_PEST_REWARP_AT = 0;
     public static final String DEFAULT_MANUAL_PEST_SOUND_PATH = "";
     public static final boolean DEFAULT_DISCO_DESTINATION_MODE = false;
+    public static final int DEFAULT_DISCO_RETURN_DELAY = 2500;
+    public static final int DEFAULT_DISCO_REWARP_AT = 0;
+    public static final boolean DEFAULT_DISCO_TP_BEFORE_WARDROBE = false;
     public static final boolean DEFAULT_TRIGGER_PEST_ON_CHAT = true;
     public static final int DEFAULT_VISITOR_THRESHOLD = 5;
     public static final boolean DEFAULT_AUTO_WARDROBE_PEST = true;
@@ -88,6 +91,8 @@ public class MacroConfig {
     public static final int DEFAULT_ROD_SWAP_DELAY = 100;
     public static final int DEFAULT_BOOK_COMBINE_DELAY = 300;
     public static final int DEFAULT_WARDROBE_POST_SWAP_DELAY = 250;
+    /** Delay (ms) after /setspawn before any wardrobe interaction during pest cleaning. */
+    public static final int DEFAULT_SETSPAWN_COOLDOWN = 1000;
     /** Delay (ms) between wardrobe-swap finishing and kicking off AOTV-to-roof. */
     public static final int DEFAULT_WARDROBE_AOTV_DELAY = 250;
     /** Delay (ms) between Y-change detection (AOTV landed) and equipping vacuum. 0 = no delay. */
@@ -188,6 +193,9 @@ public class MacroConfig {
     public static int manualPestRewarpAt = DEFAULT_MANUAL_PEST_REWARP_AT;
     public static String manualPestSoundPath = DEFAULT_MANUAL_PEST_SOUND_PATH;
     public static boolean discoDestinationMode = DEFAULT_DISCO_DESTINATION_MODE;
+    public static int discoReturnDelay = DEFAULT_DISCO_RETURN_DELAY;
+    public static int discoRewarpAt = DEFAULT_DISCO_REWARP_AT;
+    public static boolean discoTpBeforeWardrobe = DEFAULT_DISCO_TP_BEFORE_WARDROBE;
 
     /**
      * True when the pest cleaner should bypass the Taunahi CLI script and
@@ -197,6 +205,20 @@ public class MacroConfig {
      */
     public static boolean usesManualPestReturnFlow() {
         return manualPestClean || discoDestinationMode;
+    }
+
+    /**
+     * The alive-pest count at which the in-mod return flow rewarps to farming.
+     * Disco wins when both modes are toggled (consistent with sequencer
+     * precedence in {@code PestCleaningSequencer.submitCleaningSequence}).
+     */
+    public static int getActiveRewarpAt() {
+        return discoDestinationMode ? discoRewarpAt : manualPestRewarpAt;
+    }
+
+    /** How long the alive count must stay at/below the rewarp threshold before returning. */
+    public static int getActiveReturnDelayMs() {
+        return discoDestinationMode ? discoReturnDelay : manualPestReturnDelay;
     }
     public static boolean triggerPestOnChat = DEFAULT_TRIGGER_PEST_ON_CHAT;
     public static final int DEFAULT_PEST_CHAT_TRIGGER_DELAY = 0;
@@ -235,6 +257,7 @@ public class MacroConfig {
     public static int postRodReturnDelay = 80; // ms delay after restoring slot
     public static int bookCombineDelay = DEFAULT_BOOK_COMBINE_DELAY;
     public static int wardrobePostSwapDelay = DEFAULT_WARDROBE_POST_SWAP_DELAY;
+    public static int setspawnCooldown = DEFAULT_SETSPAWN_COOLDOWN;
     public static int wardrobeAotvDelay = DEFAULT_WARDROBE_AOTV_DELAY;
     public static int aotvVacuumDelay = DEFAULT_AOTV_VACUUM_DELAY;
     public static int bookThreshold = DEFAULT_BOOK_THRESHOLD;
@@ -524,6 +547,9 @@ public class MacroConfig {
         d.manualPestRewarpAt = manualPestRewarpAt;
         d.manualPestSoundPath = manualPestSoundPath;
         d.discoDestinationMode = discoDestinationMode;
+        d.discoReturnDelay = discoReturnDelay;
+        d.discoRewarpAt = discoRewarpAt;
+        d.discoTpBeforeWardrobe = discoTpBeforeWardrobe;
         d.triggerPestOnChat = triggerPestOnChat;
         d.pestChatTriggerDelay = pestChatTriggerDelay;
         d.visitorThreshold = visitorThreshold;
@@ -560,6 +586,7 @@ public class MacroConfig {
         d.postRodReturnDelay = postRodReturnDelay;
         d.bookCombineDelay = bookCombineDelay;
         d.wardrobePostSwapDelay = wardrobePostSwapDelay;
+        d.setspawnCooldown = setspawnCooldown;
         d.wardrobeAotvDelay = wardrobeAotvDelay;
         d.aotvVacuumDelay = aotvVacuumDelay;
         d.bookThreshold = bookThreshold;
@@ -668,6 +695,9 @@ public class MacroConfig {
             manualPestRewarpAt = Math.max(0, Math.min(8, d.manualPestRewarpAt));
             manualPestSoundPath = d.manualPestSoundPath != null ? d.manualPestSoundPath : DEFAULT_MANUAL_PEST_SOUND_PATH;
             discoDestinationMode = d.discoDestinationMode;
+            discoReturnDelay = Math.max(0, Math.min(10000, d.discoReturnDelay));
+            discoRewarpAt = Math.max(0, Math.min(8, d.discoRewarpAt));
+            discoTpBeforeWardrobe = d.discoTpBeforeWardrobe;
             triggerPestOnChat = d.triggerPestOnChat;
             pestChatTriggerDelay = d.pestChatTriggerDelay;
             visitorThreshold = d.visitorThreshold;
@@ -704,6 +734,7 @@ public class MacroConfig {
             postRodReturnDelay = d.postRodReturnDelay;
             bookCombineDelay = d.bookCombineDelay;
             wardrobePostSwapDelay = Math.max(0, Math.min(2000, d.wardrobePostSwapDelay));
+            setspawnCooldown = Math.max(250, Math.min(3000, d.setspawnCooldown));
             wardrobeAotvDelay = Math.max(0, Math.min(1000, d.wardrobeAotvDelay));
             aotvVacuumDelay = Math.max(0, Math.min(1000, d.aotvVacuumDelay));
             bookThreshold = d.bookThreshold;
@@ -870,6 +901,9 @@ public class MacroConfig {
         int manualPestRewarpAt = DEFAULT_MANUAL_PEST_REWARP_AT;
         String manualPestSoundPath = DEFAULT_MANUAL_PEST_SOUND_PATH;
         boolean discoDestinationMode = DEFAULT_DISCO_DESTINATION_MODE;
+        int discoReturnDelay = DEFAULT_DISCO_RETURN_DELAY;
+        int discoRewarpAt = DEFAULT_DISCO_REWARP_AT;
+        boolean discoTpBeforeWardrobe = DEFAULT_DISCO_TP_BEFORE_WARDROBE;
         boolean triggerPestOnChat = DEFAULT_TRIGGER_PEST_ON_CHAT;
         int pestChatTriggerDelay = 0;
         int visitorThreshold = DEFAULT_VISITOR_THRESHOLD;
@@ -906,6 +940,7 @@ public class MacroConfig {
         int postRodReturnDelay = 80;
         int bookCombineDelay = DEFAULT_BOOK_COMBINE_DELAY;
         int wardrobePostSwapDelay = DEFAULT_WARDROBE_POST_SWAP_DELAY;
+        int setspawnCooldown = DEFAULT_SETSPAWN_COOLDOWN;
         int wardrobeAotvDelay = DEFAULT_WARDROBE_AOTV_DELAY;
         int aotvVacuumDelay = DEFAULT_AOTV_VACUUM_DELAY;
         int bookThreshold = DEFAULT_BOOK_THRESHOLD;
